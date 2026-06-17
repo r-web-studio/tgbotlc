@@ -1,6 +1,6 @@
 """
 Main entry point for Render deployment.
-Includes web server for health checks and bot polling.
+Web server binds FIRST, then bot starts up in background.
 """
 import asyncio
 import logging
@@ -37,45 +37,56 @@ logger = logging.getLogger(__name__)
 async def on_startup(bot: Bot):
     logger.info("Starting up...")
 
-    # Retry database connection (Render DB may not be ready immediately)
-    max_retries = 5
-    for attempt in range(1, max_retries + 1):
+    for attempt in range(1, 6):
         try:
             async with engine.begin() as conn:
-                # Install pgvector extension (Render PostgreSQL doesn't have it by default)
-                await conn.execute(sqlalchemy.text(
-                    "CREATE EXTENSION IF NOT EXISTS vector"
-                ))
-                await conn.run_sync(Base.metadata.create_all)
-            logger.info("Database tables created (with pgvector)")
+                try:
+                    await conn.execute(sqlalchemy.text(
+                        "CREATE EXTENSION IF NOT EXISTS vector"
+                    ))
+                    logger.info("pgvector extension enabled")
+                    has_pgvector = True
+                except Exception:
+                    logger.warning("pgvector not available - embedding search disabled")
+                    has_pgvector = False
+
+                if has_pgvector:
+                    await conn.run_sync(Base.metadata.create_all)
+                    logger.info("All tables created")
+                else:
+                    non_embed = [t for t in Base.metadata.sorted_tables if t.name != "embeddings"]
+                    for t in non_embed:
+                        await conn.run_sync(t.create, checkfirst=True)
+                    logger.info("Tables created (embeddings skipped)")
             break
         except Exception as e:
-            if attempt < max_retries:
-                logger.warning(f"Database connection failed (attempt {attempt}/{max_retries}): {e}")
+            if attempt < 5:
+                logger.warning(f"DB attempt {attempt}/5: {e}")
                 await asyncio.sleep(5 * attempt)
             else:
-                logger.error(f"Could not connect to database after {max_retries} attempts")
-                raise
+                logger.error(f"DB failed: {e}")
+                return
 
-    async with async_session() as session:
-        count = await load_knowledge_base(session)
-        logger.info(f"Knowledge base loaded: {count} chunks")
+    try:
+        async with async_session() as session:
+            count = await load_knowledge_base(session)
+            logger.info(f"Knowledge base loaded: {count} chunks")
+    except Exception as e:
+        logger.warning(f"Knowledge base skipped: {e}")
+
     logger.info("Startup complete")
 
 
 async def on_shutdown(bot: Bot):
     logger.info("Shutting down...")
     await engine.dispose()
-    logger.info("Shutdown complete")
 
 
 async def health_handler(request: web.Request) -> web.Response:
     return web.json_response({"status": "ok", "service": "edubot-ai"})
 
 
-async def main():
-    logger.info("Initializing bot...")
-
+async def start_bot():
     bot = Bot(
         token=settings.BOT_TOKEN,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML)
@@ -95,6 +106,10 @@ async def main():
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
 
+    await dp.start_polling(bot)
+
+
+async def main():
     admin_app = create_admin_app()
     admin_app.router.add_get("/", health_handler)
     admin_app.router.add_get("/health", health_handler)
@@ -105,13 +120,14 @@ async def main():
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", port)
 
-    logger.info(f"Starting web server on port {port}...")
-
     await site.start()
+    logger.info(f"Web server on port {port}")
 
-    logger.info(f"Web server running on port {port}. Starting bot polling...")
-
-    await dp.start_polling(bot)
+    try:
+        await start_bot()
+    except Exception as e:
+        logger.error(f"Bot crashed: {e}")
+        await asyncio.sleep(3600)
 
 
 if __name__ == "__main__":
