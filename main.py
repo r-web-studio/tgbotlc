@@ -24,7 +24,6 @@ from app.bot.middlewares.language import LanguageMiddleware
 from app.bot.middlewares.rate_limit import RateLimitMiddleware
 from app.bot.handlers import setup_handlers
 from app.rag.chain import load_knowledge_base
-from app.admin_panel.app import create_admin_app
 
 logging.basicConfig(
     level=logging.INFO,
@@ -110,13 +109,13 @@ async def start_bot():
 
 
 async def main():
-    admin_app = create_admin_app()
-    admin_app.router.add_get("/", health_handler)
-    admin_app.router.add_get("/health", health_handler)
+    app = web.Application()
+    app.router.add_get("/", health_handler)
+    app.router.add_get("/health", health_handler)
 
     port = int(os.environ.get("PORT", 10000))
 
-    runner = web.AppRunner(admin_app)
+    runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", port)
 
