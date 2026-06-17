@@ -24,10 +24,15 @@ class Settings(BaseSettings):
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def normalize_db_url(cls, v: str) -> str:
+        import re as _re
         if v.startswith("postgres://"):
             v = v.replace("postgres://", "postgresql+asyncpg://", 1)
         elif v.startswith("postgresql://"):
             v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        # asyncpg doesn't accept sslmode/channel_binding query params
+        # Strip them and any trailing ? or &
+        v = _re.sub(r'[?&](sslmode|channel_binding)=[^&]*', '', v)
+        v = v.rstrip('?&')
         return v
 
     @field_validator("ADMIN_IDS", mode="before")
