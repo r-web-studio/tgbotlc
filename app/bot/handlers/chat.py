@@ -1,4 +1,5 @@
 import re
+import logging
 from aiogram import Router, F
 from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +13,7 @@ from app.ai.prompts import SYSTEM_PROMPT
 from app.ai.detector import IntentDetector
 from app.utils.language import TRANSLATIONS
 
+logger = logging.getLogger(__name__)
 router = Router()
 
 @router.message(F.text)
@@ -72,7 +74,9 @@ async def chat_handler(message: Message, session: AsyncSession, language: str = 
 
     try:
         response = await openrouter_client.chat(messages)
+        logger.info(f"AI response for user {message.from_user.id}: {response[:100]}")
     except Exception as e:
+        logger.error(f"AI error for user {message.from_user.id}: {e}")
         t = TRANSLATIONS.get(language, TRANSLATIONS.get("en", {}))
         response = t.get("error", "I'm sorry, something went wrong. Please try again.")
 

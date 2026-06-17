@@ -21,8 +21,11 @@ class RAGRetriever:
     async def retrieve_context(self, query: str, limit: int = 5) -> str:
         results = await self.retrieve(query, limit)
         if not results:
+            logger.info(f"No RAG results for query: {query[:50]}")
             return ""
         context_parts = []
         for i, r in enumerate(results, 1):
             context_parts.append(f"[Source {i}]: {r['content']}")
-        return "\n\n".join(context_parts)
+        context = "\n\n".join(context_parts)
+        logger.info(f"RAG found {len(results)} results for query: {query[:50]}")
+        return context
