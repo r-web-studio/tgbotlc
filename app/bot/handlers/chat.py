@@ -18,6 +18,7 @@ router = Router()
 
 @router.message(F.text)
 async def chat_handler(message: Message, session: AsyncSession, language: str = "en"):
+    logger.info(f"Chat handler triggered for user {message.from_user.id}: {message.text[:50]}")
     user_repo = UserRepository(session)
     user = await user_repo.get_by_telegram_id(message.from_user.id)
 
@@ -72,11 +73,12 @@ async def chat_handler(message: Message, session: AsyncSession, language: str = 
 
     messages.append({"role": "user", "content": user_text})
 
+    logger.info(f"Calling OpenRouter API for user {message.from_user.id}...")
     try:
         response = await openrouter_client.chat(messages)
         logger.info(f"AI response for user {message.from_user.id}: {response[:100]}")
     except Exception as e:
-        logger.error(f"AI error for user {message.from_user.id}: {e}")
+        logger.error(f"AI error for user {message.from_user.id}: {type(e).__name__}: {e}")
         t = TRANSLATIONS.get(language, TRANSLATIONS.get("en", {}))
         response = t.get("error", "I'm sorry, something went wrong. Please try again.")
 
