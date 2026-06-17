@@ -36,9 +36,9 @@ class RateLimitMiddleware(BaseMiddleware):
         self.user_timestamps[user_id] = [t for t in self.user_timestamps[user_id] if now - t < self.period]
 
         if len(self.user_timestamps[user_id]) >= self.limit:
-            from app.utils.language import TRANSLATIONS as translations
+            from app.utils.language import TRANSLATIONS
             lang = data.get("language", "en")
-            msg = translations.get(lang, translations["en"]).get("rate_limit", "Please wait a moment before sending another message.")
+            msg = TRANSLATIONS.get(lang, TRANSLATIONS.get("en", {})).get("rate_limit", "Please wait before sending another message.")
             await event.answer(msg)
             return None
 

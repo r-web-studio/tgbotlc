@@ -7,7 +7,7 @@ from app.database.repositories.user_repo import UserRepository
 from app.database.repositories.enrollment_repo import EnrollmentRepository
 from app.database.repositories.lead_repo import LeadRepository
 from app.bot.keyboards.reply import get_main_menu, get_level_keyboard, get_time_keyboard, get_back_keyboard
-from app.utils.language import TRANSLATIONS as translations
+from app.utils.language import TRANSLATIONS
 from app.utils.validators import validate_phone, validate_age, sanitize_input
 from app.config.settings import settings
 
@@ -29,6 +29,9 @@ async def send_to_admins(bot, text: str):
         except Exception:
             pass
 
+def get_t(language: str):
+    return TRANSLATIONS.get(language, TRANSLATIONS.get("en", {}))
+
 @router.message(F.text.in_(["📝 Enroll", "📝 Записаться", "📝 Yozilish"]))
 async def start_enrollment(message: Message, state: FSMContext, session: AsyncSession, language: str = "en"):
     user_repo = UserRepository(session)
@@ -37,9 +40,9 @@ async def start_enrollment(message: Message, state: FSMContext, session: AsyncSe
         user.language = language
         await session.commit()
 
-    t = translations.get(language, translations["en"])
+    t = get_t(language)
     await state.set_state(EnrollmentForm.full_name)
-    await message.answer(t.get("ask_name", "Great! Let's get you enrolled. 📝\n\nWhat is your full name?"), reply_markup=get_back_keyboard(language))
+    await message.answer(t.get("ask_name", "What is your full name?"), reply_markup=get_back_keyboard(language))
 
 @router.message(EnrollmentForm.full_name, F.text)
 async def process_name(message: Message, state: FSMContext, session: AsyncSession, language: str = "en"):
@@ -50,9 +53,9 @@ async def process_name(message: Message, state: FSMContext, session: AsyncSessio
 
     name = sanitize_input(message.text)
     await state.update_data(full_name=name)
-    t = translations.get(language, translations["en"])
+    t = get_t(language)
     await state.set_state(EnrollmentForm.age)
-    await message.answer(t.get("ask_age", "Nice to meet you, {}!\n\nHow old are you?".format(name)), reply_markup=get_back_keyboard(language))
+    await message.answer(t.get("ask_age", "How old are you?"), reply_markup=get_back_keyboard(language))
 
 @router.message(EnrollmentForm.age, F.text)
 async def process_age(message: Message, state: FSMContext, language: str = "en"):
@@ -62,14 +65,14 @@ async def process_age(message: Message, state: FSMContext, language: str = "en")
         return
 
     if not validate_age(message.text):
-        t = translations.get(language, translations["en"])
-        await message.answer(t.get("invalid_age", "Please enter a valid age (10-80)."), reply_markup=get_back_keyboard(language))
+        t = get_t(language)
+        await message.answer("Please enter a valid age (10-80).", reply_markup=get_back_keyboard(language))
         return
 
     await state.update_data(age=int(message.text))
-    t = translations.get(language, translations["en"])
+    t = get_t(language)
     await state.set_state(EnrollmentForm.phone)
-    await message.answer(t.get("ask_phone", "Thank you!\n\nPlease share your phone number:"), reply_markup=get_back_keyboard(language))
+    await message.answer(t.get("ask_phone", "Please share your phone number:"), reply_markup=get_back_keyboard(language))
 
 @router.message(EnrollmentForm.phone, F.text)
 async def process_phone(message: Message, state: FSMContext, language: str = "en"):
@@ -80,12 +83,12 @@ async def process_phone(message: Message, state: FSMContext, language: str = "en
 
     phone = sanitize_input(message.text)
     if not validate_phone(phone):
-        t = translations.get(language, translations["en"])
-        await message.answer(t.get("invalid_phone", "Please enter a valid phone number (e.g., +998901234567)."), reply_markup=get_back_keyboard(language))
+        t = get_t(language)
+        await message.answer("Please enter a valid phone number (e.g., +998901234567).", reply_markup=get_back_keyboard(language))
         return
 
     await state.update_data(phone=phone)
-    t = translations.get(language, translations["en"])
+    t = get_t(language)
     await state.set_state(EnrollmentForm.english_level)
     await message.answer(t.get("ask_level", "What is your current English level?"), reply_markup=get_level_keyboard(language))
 
@@ -97,20 +100,15 @@ async def process_level(message: Message, state: FSMContext, language: str = "en
         await message.answer("Main menu:", reply_markup=get_main_menu(language))
         return
 
-    valid_levels = ["A1 - Beginner", "A2 - Elementary", "B1 - Intermediate", "B2 - Upper-Intermediate", "C1 - Advanced",
-                     "A1 - Начинающий", "A2 - Элементарный", "B1 - Средний", "B2 - Выше среднего", "C1 - Продвинутый",
-                     "A1 - Boshlang'ich", "A2 - Oddiy", "B1 - O'rta", "B2 - O'rta Yuqori", "C1 - Yuqori"]
-
-    level = message.text
-    for vl in valid_levels:
-        if message.text.split(" - ")[0].strip() == vl.split(" - ")[0].strip():
-            level = vl.split(" - ")[0].strip()
-            break
+    valid_levels = ["A1", "A2", "B1", "B2", "C1"]
+    level = message.text.split(" - ")[0].strip() if " - " in message.text else message.text.strip()
+    if level not in valid_levels:
+        level = "A1"
 
     await state.update_data(english_level=level)
-    t = translations.get(language, translations["en"])
+    t = get_t(language)
     await state.set_state(EnrollmentForm.goal)
-    await message.answer(t.get("ask_goal", "What is your goal for learning English?\n(e.g., IELTS, work, travel, general)"), reply_markup=get_back_keyboard(language))
+    await message.answer(t.get("ask_goal", "What is your goal for learning English?"), reply_markup=get_back_keyboard(language))
 
 @router.message(EnrollmentForm.goal, F.text)
 async def process_goal(message: Message, state: FSMContext, language: str = "en"):
@@ -120,7 +118,7 @@ async def process_goal(message: Message, state: FSMContext, language: str = "en"
         return
 
     await state.update_data(goal=sanitize_input(message.text))
-    t = translations.get(language, translations["en"])
+    t = get_t(language)
     await state.set_state(EnrollmentForm.preferred_time)
     await message.answer(t.get("ask_time", "When do you prefer to study?"), reply_markup=get_time_keyboard(language))
 
@@ -134,16 +132,16 @@ async def process_time(message: Message, state: FSMContext, session: AsyncSessio
     await state.update_data(preferred_time=sanitize_input(message.text))
 
     data = await state.get_data()
-    t = translations.get(language, translations["en"])
+    t = get_t(language)
 
-    summary = t.get("enroll_summary", "📋 Please confirm your enrollment details:\n\n")
+    summary = "📋 Please confirm your enrollment details:\n\n"
     summary += f"👤 Name: {data['full_name']}\n"
     summary += f"🎂 Age: {data['age']}\n"
     summary += f"📱 Phone: {data['phone']}\n"
     summary += f"📚 English Level: {data['english_level']}\n"
     summary += f"🎯 Goal: {data['goal']}\n"
     summary += f"🕐 Preferred Time: {data['preferred_time']}\n\n"
-    summary += t.get("confirm_enroll", "Is everything correct?")
+    summary += "Is everything correct?"
 
     await state.set_state(EnrollmentForm.confirm)
     from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
@@ -160,8 +158,8 @@ async def process_confirm(message: Message, state: FSMContext, session: AsyncSes
 
     if message.text in cancel_texts:
         await state.clear()
-        t = translations.get(language, translations["en"])
-        await message.answer(t.get("enroll_cancelled", "Enrollment cancelled."), reply_markup=get_main_menu(language))
+        t = get_t(language)
+        await message.answer("Enrollment cancelled.", reply_markup=get_main_menu(language))
         return
 
     if message.text not in confirm_texts:
@@ -199,8 +197,8 @@ async def process_confirm(message: Message, state: FSMContext, session: AsyncSes
     if user:
         await lead_repo.update_status(user.id, "enrolled", "Completed enrollment form")
 
-    t = translations.get(language, translations["en"])
-    await message.answer(t.get("enroll_complete", "🎉 Enrollment complete! We will contact you soon."), reply_markup=get_main_menu(language))
+    t = get_t(language)
+    await message.answer(t.get("enroll_complete", "Enrollment complete! We will contact you soon."), reply_markup=get_main_menu(language))
 
     username = f"@{user.username}" if user and user.username else "N/A"
     admin_msg = (

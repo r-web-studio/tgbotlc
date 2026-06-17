@@ -10,7 +10,7 @@ from app.rag.retriever import RAGRetriever
 from app.ai.client import openrouter_client
 from app.ai.prompts import SYSTEM_PROMPT
 from app.ai.detector import IntentDetector
-from app.utils.language import TRANSLATIONS as translations
+from app.utils.language import TRANSLATIONS
 
 router = Router()
 
@@ -73,7 +73,7 @@ async def chat_handler(message: Message, session: AsyncSession, language: str = 
     try:
         response = await openrouter_client.chat(messages)
     except Exception as e:
-        t = translations.get(language, translations["en"])
+        t = TRANSLATIONS.get(language, TRANSLATIONS.get("en", {}))
         response = t.get("error", "I'm sorry, something went wrong. Please try again.")
 
     await conv_repo.add_message(user.id, "assistant", response, language)

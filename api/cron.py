@@ -19,7 +19,7 @@ from app.database.engine import async_session
 from app.database.repositories.user_repo import UserRepository
 from app.database.repositories.follow_up_repo import FollowUpRepository
 from app.bot.services.notification_service import NotificationService
-from app.utils.language import TRANSLATIONS as translations
+from app.utils.language import TRANSLATIONS
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

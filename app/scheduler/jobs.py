@@ -5,7 +5,7 @@ from aiogram import Bot
 from app.database.engine import async_session
 from app.database.repositories.user_repo import UserRepository
 from app.database.repositories.follow_up_repo import FollowUpRepository
-from app.utils.language import TRANSLATIONS as translations
+from app.utils.language import TRANSLATIONS
 from app.config.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -63,8 +63,8 @@ class Scheduler:
                     continue
                 
                 lang = user.language or "en"
-                t = translations.get(lang, translations["en"])
-                message = t.get("follow_up", "Hello! 👋\nYou were interested in our English courses.\nIf you still have questions, I'll be happy to help! 😊\n\nReply to continue the conversation.")
+                t = TRANSLATIONS.get(lang, TRANSLATIONS.get("en", {}))
+                message = t.get("follow_up", "Hello! You were interested in our English courses. If you still have questions, I'll be happy to help!")
                 
                 scheduled_at = datetime.utcnow()
                 await follow_up_repo.create(user.id, message, scheduled_at)
