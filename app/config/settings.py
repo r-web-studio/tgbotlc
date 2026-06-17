@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from pydantic import model_validator
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,42 +21,31 @@ class Settings(BaseSettings):
     ADMIN_PASSWORD: str = ""
     SESSION_SECRET: str = "change-me-in-production"
 
-    @model_validator(mode="before")
+    @field_validator("ADMIN_IDS", mode="before")
     @classmethod
-    def parse_admin_ids(cls, data: dict) -> dict:
-        raw = data.get("ADMIN_IDS")
-        if raw is None:
-            data["ADMIN_IDS"] = []
-            return data
-        if isinstance(raw, list):
-            return data
-        if isinstance(raw, int):
-            data["ADMIN_IDS"] = [raw]
-            return data
-        if isinstance(raw, str):
-            raw = raw.strip()
-            if not raw:
-                data["ADMIN_IDS"] = []
-                return data
-            # Try JSON array: "[1234, 5678]"
-            if raw.startswith("["):
+    def parse_admin_ids(cls, v):
+        if isinstance(v, list):
+            return v
+        if isinstance(v, int):
+            return [v]
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return []
+            if v.startswith("["):
                 try:
-                    parsed = json.loads(raw)
+                    parsed = json.loads(v)
                     if isinstance(parsed, list):
-                        data["ADMIN_IDS"] = [int(x) for x in parsed]
-                        return data
+                        return [int(x) for x in parsed]
                 except (json.JSONDecodeError, ValueError):
                     pass
-            # Comma-separated or single
-            parts = [p.strip() for p in raw.split(",")]
+            parts = [p.strip() for p in v.split(",")]
             result = []
             for part in parts:
                 if part.isdigit():
                     result.append(int(part))
-            data["ADMIN_IDS"] = result
-            return data
-        data["ADMIN_IDS"] = []
-        return data
+            return result
+        return []
 
 
 settings = Settings()
