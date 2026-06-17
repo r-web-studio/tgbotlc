@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from pydantic import model_validator
+import json
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,20 +21,33 @@ class Settings(BaseSettings):
     ADMIN_PASSWORD: str = ""
     SESSION_SECRET: str = "change-me-in-production"
 
-    @model_validator(mode="before")
+    @field_validator("ADMIN_IDS", mode="before")
     @classmethod
-    def parse_admin_ids(cls, values: dict) -> dict:
-        if "ADMIN_IDS" in values:
-            raw = values["ADMIN_IDS"]
-            if isinstance(raw, list):
-                values["ADMIN_IDS"] = raw
-            elif isinstance(raw, str) and raw.strip():
-                values["ADMIN_IDS"] = [
-                    int(x.strip()) for x in raw.split(",") if x.strip().isdigit()
-                ]
-            else:
-                values["ADMIN_IDS"] = []
-        return values
+    def parse_admin_ids(cls, v):
+        if isinstance(v, list):
+            return v
+        if isinstance(v, int):
+            return [v]
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return []
+            # Try JSON array: "[1234, 5678]"
+            if v.startswith("["):
+                try:
+                    parsed = json.loads(v)
+                    if isinstance(parsed, list):
+                        return [int(x) for x in parsed]
+                except (json.JSONDecodeError, ValueError):
+                    pass
+            # Comma-separated: "1234,5678" or single: "12345678"
+            parts = [p.strip() for p in v.split(",")]
+            result = []
+            for part in parts:
+                if part.isdigit():
+                    result.append(int(part))
+            return result
+        return []
 
 
 settings = Settings()
