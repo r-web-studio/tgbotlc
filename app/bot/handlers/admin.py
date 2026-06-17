@@ -407,25 +407,3 @@ async def cb_back(callback: CallbackQuery):
         [InlineKeyboardButton(text="Search User", callback_data="adm:search")],
     ])
     await callback.message.edit_text("Admin Panel", reply_markup=kb)
-
-
-@router.message(F.text & ~F.command, F.from_user.id.in_(settings.ADMIN_IDS))
-async def admin_search_handler(message: Message):
-    if not await admin_check(message):
-        return
-
-    async with async_session() as session:
-        user_repo = UserRepository(session)
-        users = await user_repo.search(message.text)
-
-    if not users:
-        await message.answer("No users found.")
-        return
-
-    kb = []
-    for u in users[:10]:
-        name = u.full_name or u.username or str(u.telegram_id)
-        kb.append([InlineKeyboardButton(text=f"[{u.id}] {name}", callback_data=f"adm:user:{u.id}")])
-    kb.append([InlineKeyboardButton(text="Back", callback_data="adm:back")])
-
-    await message.answer(f"Found {len(users)} users:", reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
