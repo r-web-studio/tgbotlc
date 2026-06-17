@@ -7,6 +7,7 @@ import logging
 import os
 import sys
 from aiohttp import web
+import sqlalchemy
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -35,9 +36,27 @@ logger = logging.getLogger(__name__)
 
 async def on_startup(bot: Bot):
     logger.info("Starting up...")
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    logger.info("Database tables created")
+
+    # Retry database connection (Render DB may not be ready immediately)
+    max_retries = 5
+    for attempt in range(1, max_retries + 1):
+        try:
+            async with engine.begin() as conn:
+                # Install pgvector extension (Render PostgreSQL doesn't have it by default)
+                await conn.execute(sqlalchemy.text(
+                    "CREATE EXTENSION IF NOT EXISTS vector"
+                ))
+                await conn.run_sync(Base.metadata.create_all)
+            logger.info("Database tables created (with pgvector)")
+            break
+        except Exception as e:
+            if attempt < max_retries:
+                logger.warning(f"Database connection failed (attempt {attempt}/{max_retries}): {e}")
+                await asyncio.sleep(5 * attempt)
+            else:
+                logger.error(f"Could not connect to database after {max_retries} attempts")
+                raise
+
     async with async_session() as session:
         count = await load_knowledge_base(session)
         logger.info(f"Knowledge base loaded: {count} chunks")
