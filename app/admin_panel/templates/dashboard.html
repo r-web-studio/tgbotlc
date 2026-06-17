@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - EduBot Admin{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>Total Users</h3>
+        <p class="stat-number">{{ total_users }}</p>
+    </div>
+    <div class="stat-card enrolled">
+        <h3>Enrolled</h3>
+        <p class="stat-number">{{ enrolled }}</p>
+    </div>
+    <div class="stat-card hot">
+        <h3>Hot Leads</h3>
+        <p class="stat-number">{{ hot_leads }}</p>
+    </div>
+    <div class="stat-card warm">
+        <h3>Warm Leads</h3>
+        <p class="stat-number">{{ warm_leads }}</p>
+    </div>
+    <div class="stat-card cold">
+        <h3>Cold Leads</h3>
+        <p class="stat-number">{{ cold_leads }}</p>
+    </div>
+</div>
+{% endblock %}

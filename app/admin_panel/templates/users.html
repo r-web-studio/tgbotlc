@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Users - EduBot Admin{% endblock %}
+{% block content %}
+<h1>Users</h1>
+<form class="search-form" method="GET" action="/users">
+    <input type="text" name="search" placeholder="Search users..." value="{{ search }}">
+    <button type="submit" class="btn btn-primary">Search</button>
+    {% if search %}
+    <a href="/users" class="btn">Clear</a>
+    {% endif %}
+</form>
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Full Name</th>
+                <th>Phone</th>
+                <th>Level</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>@{{ user.username or 'N/A' }}</td>
+                <td>{{ user.full_name or 'N/A' }}</td>
+                <td>{{ user.phone or 'N/A' }}</td>
+                <td>{{ user.english_level or 'N/A' }}</td>
+                <td><span class="badge badge-{{ user.lead_status }}">{{ user.lead_status }}</span></td>
+                <td>
+                    <a href="/users/{{ user.id }}" class="btn btn-small">View</a>
+                    <a href="/users/{{ user.id }}/delete" class="btn btn-small btn-danger" onclick="return confirm('Are you sure?')">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not users %}
+            <tr><td colspan="7" class="empty-state">No users found.</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

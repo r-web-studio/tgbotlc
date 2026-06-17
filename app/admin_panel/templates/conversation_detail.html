@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Conversation - EduBot Admin{% endblock %}
+{% block content %}
+<h1>Conversation with {{ user.full_name or user.username or user.telegram_id }}</h1>
+<div class="conversation-full">
+    {% for msg in history %}
+    <div class="message message-{{ msg.role }}">
+        <div class="message-header">
+            <strong>{{ 'User' if msg.role == 'user' else 'AI' }}</strong>
+            <small>{{ msg.created_at.strftime('%Y-%m-%d %H:%M') if msg.created_at else '' }}</small>
+        </div>
+        <div class="message-content">{{ msg.content }}</div>
+    </div>
+    {% endfor %}
+    {% if not history %}
+    <p>No messages in this conversation.</p>
+    {% endif %}
+</div>
+<a href="/conversations" class="btn">&larr; Back to Conversations</a>
+{% endblock %}

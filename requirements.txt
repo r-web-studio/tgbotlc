@@ -1,0 +1,31 @@
+# Core
+aiogram
+sqlalchemy[asyncio]
+asyncpg
+alembic
+pgvector
+
+# HTTP Client
+httpx
+aiohttp
+
+# Web Admin Panel
+aiofiles
+jinja2
+aiohttp-jinja2
+python-multipart
+
+# Security
+passlib
+bcrypt
+itsdangerous
+
+# Data Validation
+pydantic
+pydantic-settings
+
+# Utilities
+python-dotenv
+openpyxl
+aiosqlite
+tiktoken

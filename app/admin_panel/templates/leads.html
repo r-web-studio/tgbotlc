@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Leads - EduBot Admin{% endblock %}
+{% block content %}
+<h1>Lead Management</h1>
+<div class="leads-grid">
+    <div class="lead-section">
+        <h2>Hot Leads ({{ hot_users|length }})</h2>
+        {% for user in hot_users %}
+        <div class="lead-card hot">
+            <p><strong>{{ user.full_name or user.username }}</strong></p>
+            <p>Level: {{ user.english_level or 'N/A' }}</p>
+            <p>Goal: {{ user.goal or 'N/A' }}</p>
+            <form method="POST" action="/leads/{{ user.id }}/update" class="inline-form">
+                <select name="status">
+                    <option value="hot" selected>Hot</option>
+                    <option value="warm">Warm</option>
+                    <option value="cold">Cold</option>
+                    <option value="enrolled">Enrolled</option>
+                </select>
+                <button type="submit" class="btn btn-small">Update</button>
+            </form>
+        </div>
+        {% endfor %}
+        {% if not hot_users %}<p>No hot leads.</p>{% endif %}
+    </div>
+    <div class="lead-section">
+        <h2>Warm Leads ({{ warm_users|length }})</h2>
+        {% for user in warm_users %}
+        <div class="lead-card warm">
+            <p><strong>{{ user.full_name or user.username }}</strong></p>
+            <p>Level: {{ user.english_level or 'N/A' }}</p>
+            <form method="POST" action="/leads/{{ user.id }}/update" class="inline-form">
+                <select name="status">
+                    <option value="hot">Hot</option>
+                    <option value="warm" selected>Warm</option>
+                    <option value="cold">Cold</option>
+                    <option value="enrolled">Enrolled</option>
+                </select>
+                <button type="submit" class="btn btn-small">Update</button>
+            </form>
+        </div>
+        {% endfor %}
+        {% if not warm_users %}<p>No warm leads.</p>{% endif %}
+    </div>
+    <div class="lead-section">
+        <h2>Cold Leads ({{ cold_users|length }})</h2>
+        {% for user in cold_users %}
+        <div class="lead-card cold">
+            <p><strong>{{ user.full_name or user.username }}</strong></p>
+            <form method="POST" action="/leads/{{ user.id }}/update" class="inline-form">
+                <select name="status">
+                    <option value="hot">Hot</option>
+                    <option value="warm">Warm</option>
+                    <option value="cold" selected>Cold</option>
+                    <option value="enrolled">Enrolled</option>
+                </select>
+                <button type="submit" class="btn btn-small">Update</button>
+            </form>
+        </div>
+        {% endfor %}
+        {% if not cold_users %}<p>No cold leads.</p>{% endif %}
+    </div>
+    <div class="lead-section">
+        <h2>Enrolled ({{ enrolled_users|length }})</h2>
+        {% for user in enrolled_users %}
+        <div class="lead-card enrolled">
+            <p><strong>{{ user.full_name or user.username }}</strong></p>
+            <p>Level: {{ user.english_level or 'N/A' }}</p>
+            <p>Goal: {{ user.goal or 'N/A' }}</p>
+        </div>
+        {% endfor %}
+        {% if not enrolled_users %}<p>No enrolled users.</p>{% endif %}
+    </div>
+</div>
+{% endblock %}

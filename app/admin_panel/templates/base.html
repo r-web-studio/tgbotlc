@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EduBot Admin Panel{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    {% if admin %}
+    <nav class="navbar">
+        <div class="nav-brand">EduBot Admin</div>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/users">Users</a>
+            <a href="/conversations">Conversations</a>
+            <a href="/leads">Leads</a>
+            <a href="/export/users">Export</a>
+            <a href="/logout" class="logout">Logout</a>
+        </div>
+    </nav>
+    {% endif %}
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

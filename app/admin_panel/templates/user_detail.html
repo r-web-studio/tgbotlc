@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}User Detail - EduBot Admin{% endblock %}
+{% block content %}
+<h1>User: {{ user.full_name or user.username or user.telegram_id }}</h1>
+<div class="detail-grid">
+    <div class="detail-card">
+        <h3>Profile</h3>
+        <p><strong>Telegram ID:</strong> {{ user.telegram_id }}</p>
+        <p><strong>Username:</strong> @{{ user.username or 'N/A' }}</p>
+        <p><strong>Full Name:</strong> {{ user.full_name or 'N/A' }}</p>
+        <p><strong>Age:</strong> {{ user.age or 'N/A' }}</p>
+        <p><strong>Phone:</strong> {{ user.phone or 'N/A' }}</p>
+        <p><strong>English Level:</strong> {{ user.english_level or 'N/A' }}</p>
+        <p><strong>Goal:</strong> {{ user.goal or 'N/A' }}</p>
+        <p><strong>Preferred Time:</strong> {{ user.preferred_time or 'N/A' }}</p>
+        <p><strong>Lead Status:</strong> <span class="badge badge-{{ user.lead_status }}">{{ user.lead_status }}</span></p>
+        <p><strong>Enrolled:</strong> {{ 'Yes' if user.is_enrolled else 'No' }}</p>
+        <p><strong>Language:</strong> {{ user.language }}</p>
+        <p><strong>Created:</strong> {{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else 'N/A' }}</p>
+    </div>
+    <div class="detail-card">
+        <h3>Memories</h3>
+        {% for memory in memories %}
+        <p><strong>{{ memory.key }}:</strong> {{ memory.value }}</p>
+        {% endfor %}
+        {% if not memories %}
+        <p>No memories stored.</p>
+        {% endif %}
+    </div>
+</div>
+<div class="detail-card">
+    <h3>Conversation History</h3>
+    <div class="conversation-list">
+        {% for msg in history %}
+        <div class="message message-{{ msg.role }}">
+            <strong>{{ 'User' if msg.role == 'user' else 'AI' }}</strong>
+            <p>{{ msg.content }}</p>
+            <small>{{ msg.created_at.strftime('%Y-%m-%d %H:%M') if msg.created_at else '' }}</small>
+        </div>
+        {% endfor %}
+        {% if not history %}
+        <p>No conversation history.</p>
+        {% endif %}
+    </div>
+</div>
+{% if summaries %}
+<div class="detail-card">
+    <h3>Summaries</h3>
+    {% for summary in summaries %}
+    <div class="summary">
+        <p>{{ summary.summary }}</p>
+        <small>{{ summary.created_at.strftime('%Y-%m-%d %H:%M') if summary.created_at else '' }}</small>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+<a href="/users" class="btn">&larr; Back to Users</a>
+{% endblock %}
