@@ -16,7 +16,8 @@ class EmbeddingService:
 
     async def embed_query(self, text: str) -> list[float]:
         try:
-            return await self._api_embed(text)
+            result = await self._api_embed(text)
+            return result
         except Exception as e:
             logger.warning(f"API embedding failed, using fallback: {e}")
             return self._hash_embed(text)
@@ -40,7 +41,12 @@ class EmbeddingService:
             )
             response.raise_for_status()
             data = response.json()
-            return data["data"][0]["embedding"]
+            embedding = data["data"][0]["embedding"]
+            # Validate: reject vectors with NaN or inf
+            if any(not (-1e30 < v < 1e30) for v in embedding):
+                logger.warning("API returned invalid embedding (NaN/inf), using fallback")
+                return self._hash_embed(text)
+            return embedding
 
     def _hash_embed(self, text: str) -> list[float]:
         h = hashlib.sha512(text.encode("utf-8")).digest()
