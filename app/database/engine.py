@@ -11,8 +11,9 @@ if "neon.tech" in settings.DATABASE_URL or "neon.cloud" in settings.DATABASE_URL
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=False,
-    pool_size=5,
-    max_overflow=5,
+    pool_size=2,
+    max_overflow=3,
+    pool_pre_ping=True,
     connect_args=connect_args,
 )
 

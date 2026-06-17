@@ -21,7 +21,6 @@ from app.database.engine import engine, async_session
 from app.database.models import Base
 from app.bot.middlewares.database import DatabaseMiddleware
 from app.bot.middlewares.language import LanguageMiddleware
-from app.bot.middlewares.rate_limit import RateLimitMiddleware
 from app.bot.handlers import setup_handlers
 from app.rag.chain import load_knowledge_base
 
@@ -94,7 +93,6 @@ async def start_bot():
     dp = Dispatcher()
     dp.message.middleware(DatabaseMiddleware())
     dp.message.middleware(LanguageMiddleware())
-    dp.message.middleware(RateLimitMiddleware(limit=1, period=60))
     dp.callback_query.middleware(DatabaseMiddleware())
     dp.callback_query.middleware(LanguageMiddleware())
 
