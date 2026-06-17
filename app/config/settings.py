@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import Field, field_validator
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,19 +15,25 @@ class Settings(BaseSettings):
     BOT_TOKEN: str = ""
     OPENROUTER_API_KEY: str = ""
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/edubot"
-    ADMIN_IDS: list[int] = Field(default_factory=list)
+    ADMIN_IDS: list[int] = []
     ADMIN_USERNAME: str = ""
     ADMIN_PASSWORD: str = ""
     SESSION_SECRET: str = "change-me-in-production"
 
-    @field_validator("ADMIN_IDS", mode="before")
+    @model_validator(mode="before")
     @classmethod
-    def parse_admin_ids(cls, v: str | list[int] | None) -> list[int]:
-        if isinstance(v, list):
-            return v
-        if isinstance(v, str) and v.strip():
-            return [int(x.strip()) for x in v.split(",") if x.strip().isdigit()]
-        return []
+    def parse_admin_ids(cls, values: dict) -> dict:
+        if "ADMIN_IDS" in values:
+            raw = values["ADMIN_IDS"]
+            if isinstance(raw, list):
+                values["ADMIN_IDS"] = raw
+            elif isinstance(raw, str) and raw.strip():
+                values["ADMIN_IDS"] = [
+                    int(x.strip()) for x in raw.split(",") if x.strip().isdigit()
+                ]
+            else:
+                values["ADMIN_IDS"] = []
+        return values
 
 
 settings = Settings()
